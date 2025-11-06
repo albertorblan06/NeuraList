@@ -1,0 +1,27 @@
+# Web Scraping
+scrapy>=2.11.0
+selenium>=4.16.0
+webdriver-manager>=4.0.1
+
+# Data Processing
+pandas>=2.1.4
+numpy>=1.26.2
+
+# HTTP Requests & Parsing
+requests>=2.31.0
+beautifulsoup4>=4.12.2
+lxml>=5.1.0
+
+# Rate Limiting & Retry Logic
+requests-ratelimiter>=0.4.2
+tenacity>=8.2.3
+
+# Database
+sqlalchemy>=2.0.25
+psycopg2-binary>=2.9.9
+
+# Environment Variables
+python-dotenv>=1.0.0
+
+# Logging
+loguru>=0.7.2
