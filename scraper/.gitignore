@@ -7,23 +7,17 @@ __pycache__/
 venv/
 env/
 ENV/
-*.egg-info/
-dist/
-build/
-
-# Environment variables
-.env
 
 # Scrapy
-.scrapy/
+.scrapy
 httpcache/
 *.log
 
 # Database
+data/
 *.db
 *.sqlite
 *.sqlite3
-data/*.db
 
 # IDE
 .vscode/
@@ -36,11 +30,7 @@ data/*.db
 .DS_Store
 Thumbs.db
 
-# Jupyter Notebooks
-.ipynb_checkpoints/
-
-# Data files
-*.csv
-*.json
-data/*.json
-data/*.csv
+# Temporary files
+page_source.html
+scraper_output.log
+scraper_run.log

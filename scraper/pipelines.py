@@ -36,6 +36,10 @@ class ProductPipeline:
         session = self.Session()
 
         try:
+            # Convert empty strings to None for nullable fields
+            if not item.get('ean'):
+                item['ean'] = None
+
             # Check if product already exists by product_id (more reliable than EAN)
             existing_product = None
             if item.get('product_id'):

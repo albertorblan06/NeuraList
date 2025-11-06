@@ -15,7 +15,7 @@ class Product(Base):
 
     # Primary identifiers
     id = Column(Integer, primary_key=True, autoincrement=True)
-    ean = Column(String(13), unique=True, nullable=False, index=True)
+    ean = Column(String(13), unique=False, nullable=True, index=True)  # Not unique, many products don't have EAN
     product_id = Column(String(50), unique=True, nullable=False, index=True)
 
     # Basic information

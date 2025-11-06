@@ -90,36 +90,48 @@ class MercadonaSitemapSpider(SitemapSpider):
         url = response.url
         logger.info(f"Parsing product page: {url}")
 
-        try:
-            # Set up driver if not already done
-            self.setup_driver()
-
-            # Load the page
-            self.driver.get(url)
-
-            # Wait for the page to load (wait for React to render)
-            wait = WebDriverWait(self.driver, 15)
-
-            # Wait for multiple elements to ensure page is fully loaded
+        max_retries = 2
+        for attempt in range(max_retries):
             try:
-                wait.until(EC.presence_of_element_located((By.TAG_NAME, "h1")))
-            except:
-                logger.warning(f"Timeout waiting for h1 element on {url}")
+                # Set up driver if not already done
+                self.setup_driver()
 
-            # Give extra time for React to fully hydrate and load all data
-            time.sleep(5)
+                # Load the page
+                self.driver.get(url)
 
-            # Extract product data
-            product = self.extract_product_data(url)
+                # Wait for the page to load (wait for React to render)
+                wait = WebDriverWait(self.driver, 15)
 
-            if product and product.get('name'):
-                logger.info(f"Successfully parsed product: {product.get('name')}")
-                yield product
-            else:
-                logger.warning(f"Could not extract product data from {url}")
+                # Wait for multiple elements to ensure page is fully loaded
+                try:
+                    wait.until(EC.presence_of_element_located((By.TAG_NAME, "h1")))
+                except:
+                    logger.warning(f"Timeout waiting for h1 element on {url}")
 
-        except Exception as e:
-            logger.error(f"Error parsing product page {url}: {e}")
+                # Give extra time for React to fully hydrate and load all data
+                time.sleep(5)
+
+                # Extract product data
+                product = self.extract_product_data(url)
+
+                if product and product.get('name'):
+                    logger.info(f"Successfully parsed product: {product.get('name')}")
+                    yield product
+                    break
+                else:
+                    logger.warning(f"Could not extract product data from {url}")
+                    break
+
+            except Exception as e:
+                logger.error(f"Error parsing product page {url} (attempt {attempt + 1}/{max_retries}): {e}")
+                # If connection error, recreate driver
+                if "Connection refused" in str(e) or "session" in str(e).lower():
+                    logger.warning("Selenium session lost, recreating driver...")
+                    self.close_driver()
+                    if attempt < max_retries - 1:
+                        time.sleep(2)
+                        continue
+                break
 
     def extract_product_data(self, url: str) -> Dict[str, Any]:
         """
