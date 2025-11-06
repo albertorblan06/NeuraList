@@ -36,21 +36,29 @@ class ProductPipeline:
         session = self.Session()
 
         try:
-            # Check if product already exists
-            existing_product = session.query(Product).filter_by(
-                ean=item.get('ean')
-            ).first()
+            # Check if product already exists by product_id (more reliable than EAN)
+            existing_product = None
+            if item.get('product_id'):
+                existing_product = session.query(Product).filter_by(
+                    product_id=item.get('product_id')
+                ).first()
+
+            # Fallback to EAN if product_id not available and EAN is not empty
+            if not existing_product and item.get('ean'):
+                existing_product = session.query(Product).filter_by(
+                    ean=item.get('ean')
+                ).first()
 
             if existing_product:
                 # Update existing product
                 for key, value in item.items():
                     setattr(existing_product, key, value)
-                logger.info(f"Updated product: {item.get('name')} (EAN: {item.get('ean')})")
+                logger.info(f"Updated product: {item.get('name')} (ID: {item.get('product_id')})")
             else:
                 # Create new product
                 product = Product(**item)
                 session.add(product)
-                logger.info(f"Added new product: {item.get('name')} (EAN: {item.get('ean')})")
+                logger.info(f"Added new product: {item.get('name')} (ID: {item.get('product_id')})")
 
             session.commit()
             return item
