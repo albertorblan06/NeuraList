@@ -2,7 +2,7 @@
 
 Ultra-fast product scraper for Mercadona using their undocumented public API. **10-20x faster** than traditional Selenium-based scrapers.
 
-## Quick Start (Recommended)
+## Quick Start
 
 ```bash
 # 1. Install dependencies
@@ -10,29 +10,35 @@ python3 -m venv venv
 source venv/bin/activate
 pip install -r requirements.txt
 
-# 2. Run ultra-fast API scraper (500 products in ~15 minutes)
-python3 scrape_500_fast.py
+# 2. Run the scraper
+python3 scraper.py
 
 # 3. Check results
 python3 check_db.py
 ```
 
-That's it! You now have 500 products with complete data including EAN codes, prices, images, ingredients, and allergens.
+That's it! The scraper will collect products with complete data including EAN codes, prices, images, ingredients, and allergens.
+
+## Current Status
+
+- **Database:** 500 products scraped and ready to use
+- **Performance:** 0.81 products/second
+- **Data Quality:** Complete product information with real EAN codes
 
 ## Why This Scraper?
 
-### Ultra-Fast API Scraping (NEW!)
-- **Speed**: 0.6 products/second (~15 minutes for 500 products)
+### Ultra-Fast API Scraping
+- **Speed**: 0.81 products/second
 - **Direct API Access**: No browser automation needed
 - **Complete Data**: Full product information including EAN codes
-- **Simple**: Just run `python3 scrape_500_fast.py`
+- **Simple**: Just Python + requests library
 
 ### Comparison
 
 | Method | Speed | Time for 500 products |
 |--------|-------|----------------------|
 | Selenium (single) | 0.1-0.2 products/sec | ~50 minutes |
-| API Direct (NEW) | 0.6 products/sec | ~15 minutes |
+| API Direct | 0.81 products/sec | ~10 minutes |
 
 ## Features
 
@@ -44,23 +50,22 @@ That's it! You now have 500 products with complete data including EAN codes, pri
   - Categories and subcategories
   - Full ingredients lists
   - Allergen information
-  - Nutritional data
 - **Database Storage**: SQLite database with automatic deduplication
 - **Simple**: No browser setup, no Selenium, just Python + requests
+- **Clean Codebase**: Minimal dependencies, production-ready
 
-## Available Scrapers
+## Available Tools
 
-### 1. Ultra-Fast API Scraper (RECOMMENDED)
+### 1. Main Scraper (RECOMMENDED)
 
-**`scrape_500_fast.py`** - Direct API scraper
+**`scraper.py`** - Production scraper
 ```bash
-python3 scrape_500_fast.py
+python3 scraper.py
 ```
 
-- **Speed**: ~0.6 products/second
-- **Target**: 500 products
-- **Time**: ~15 minutes
-- **Method**: Direct API calls (no sitemap)
+- **Speed**: ~0.81 products/second
+- **Method**: Direct API calls
+- **Configurable**: Edit START_ID and END_ID to customize range
 
 ### 2. Quick Test Scraper
 
@@ -72,21 +77,15 @@ python3 test_api.py
 - Great for testing and verification
 - Completes in ~30 seconds
 
-### 3. Scrapy API Spider
+### 3. Database Inspector
 
-**`spiders/mercadona_api_spider.py`** - Scrapy-based API scraper
+**`check_db.py`** - View database contents
 ```bash
-scrapy crawl mercadona_api -s CLOSESPIDER_ITEMCOUNT=100
+python3 check_db.py
 ```
 
-- Uses sitemap for product discovery
-- Slower due to sitemap parsing
-- More Scrapy-native approach
-
-### 4. Legacy Scrapers (Deprecated)
-
-- `spiders/mercadona_sitemap_spider.py` - Original Selenium scraper (slow)
-- `spiders/mercadona_parallel_spider.py` - Parallel Selenium (still slow)
+- Shows product count and sample data
+- Useful for verifying scraper results
 
 ## Setup
 
@@ -103,11 +102,17 @@ source venv/bin/activate  # On Windows: venv\Scripts\activate
 pip install -r requirements.txt
 ```
 
+Dependencies:
+- `requests` - HTTP requests
+- `sqlalchemy` - Database ORM
+- `loguru` - Logging
+- `python-dotenv` - Environment variables
+
 ### 3. Run the Scraper
 
 ```bash
-# Ultra-fast API scraper (recommended)
-python3 scrape_500_fast.py
+# Main scraper
+python3 scraper.py
 
 # Or test with 20 products first
 python3 test_api.py
@@ -115,7 +120,7 @@ python3 test_api.py
 
 ## How It Works
 
-The ultra-fast scraper discovered Mercadona's undocumented public API:
+The scraper uses Mercadona's undocumented public API:
 
 ```
 https://tienda.mercadona.es/api/v1_1/products/{product_id}
@@ -133,10 +138,10 @@ We:
 
 ### Product ID Strategy
 
-- Product IDs range from ~10000 to ~15000+
+- Product IDs range from ~4,900 to ~72,000
 - Only ~9% of IDs exist (sparse distribution)
-- To get 500 products, we try ~5500 IDs
 - The scraper automatically handles 404s
+- Rate limiting: 0.5 second delay between requests to avoid blocking
 
 ### Example API Response
 
@@ -161,38 +166,34 @@ We:
 
 ## Configuration
 
-Edit `scrape_500_fast.py` to change the scraping range:
+Edit `scraper.py` to change the scraping range:
 
 ```python
-START_ID = 10000  # Starting product ID
-END_ID = 15500    # Ending product ID
+START_ID = 4900   # Starting product ID
+END_ID = 75000    # Ending product ID
 ```
 
 The scraper will automatically:
 - Skip non-existent products (404s)
-- Stop after reaching 500 products
+- Add delays to prevent rate limiting
 - Save everything to `data/products.db`
 
 ## Project Structure
 
 ```
 scraper/
-├── scrape_500_fast.py        # RECOMMENDED: Ultra-fast API scraper
+├── scraper.py                # Main API scraper
 ├── test_api.py               # Quick test with 20 products
 ├── check_db.py               # View database contents
-├── find_api.py               # API discovery tool
-├── config/
-│   └── settings.py           # Scrapy settings
 ├── models/
+│   ├── __init__.py
 │   └── product.py            # Database models (SQLAlchemy)
-├── spiders/
-│   ├── mercadona_api_spider.py     # Scrapy API spider
-│   ├── mercadona_sitemap_spider.py # Legacy Selenium spider
-│   └── mercadona_parallel_spider.py # Legacy parallel spider
 ├── data/
-│   └── products.db           # SQLite database (created automatically)
-├── pipelines.py              # Data processing
+│   ├── products.db           # SQLite database (500 products)
+│   └── products_backup_91.db # Backup of original 91 products
 ├── requirements.txt          # Dependencies
+├── .env.example              # Environment variables template
+├── .gitignore                # Git ignore rules
 └── README.md                 # This file
 ```
 
@@ -233,7 +234,7 @@ sqlite3 data/products.db "SELECT name, price, ean FROM products LIMIT 10"
 
 The API scraper provides **high-quality, complete data**:
 
-✅ **Real EAN codes** - Not scraped from HTML, directly from Mercadona's system
+✅ **Real EAN codes** - Directly from Mercadona's system
 ✅ **Accurate prices** - Up-to-date pricing information
 ✅ **Complete ingredients** - Full ingredients and allergen lists
 ✅ **High-res images** - Direct links to product images
@@ -242,21 +243,48 @@ The API scraper provides **high-quality, complete data**:
 Sample data:
 ```
 Chocolate líquido a la taza Hacendado
-  Price: 2.35€
+  Price: €2.35
   EAN: 8480000100054
   Category: Bebidas → Batidos y leches
   Ingredients: Leche desnatada, cacao desgrasado...
+```
+
+## Performance Stats
+
+**Latest Scraper Performance (500 products):**
+```
+✅ Successfully scraped: 500 products
+⏭️  Skipped (404s): 3,395 non-existent IDs
+❌ Errors: 1 (minimal)
+⏱️  Total time: 620.4 seconds (10.3 minutes)
+🚀 Average speed: 0.81 products/second
+📊 ID check rate: 0.159 seconds per ID
+```
+
+**Full Catalog Estimates:**
+```
+Total ID range: 4,900 to 75,000 (~70,100 IDs)
+Expected products: 5,000-6,000 total
+Estimated time: 3-4 hours (with rate limiting)
 ```
 
 ## Troubleshooting
 
 ### Database Locked Error
 ```bash
-# Close any open connections
-pkill -9 -f scrape_500_fast.py
+# Kill any running scraper processes
+pkill -9 -f scraper.py
 # Remove lock file if needed
 rm -f data/products.db-journal
 ```
+
+### HTTP 403 Forbidden Errors
+This means Mercadona's API has temporarily blocked your IP due to too many requests.
+
+**Solutions:**
+- Wait 30-60 minutes for the block to expire
+- Increase the delay in `scraper.py` (change `time.sleep(0.5)` to a higher value)
+- Start from a higher ID range where products exist (e.g., START_ID = 10000)
 
 ### No Products Found
 ```bash
@@ -265,22 +293,21 @@ curl https://tienda.mercadona.es/api/v1_1/products/10005
 # Should return JSON data
 ```
 
-### Slow Scraping
-Make sure you're using the right scraper:
-```bash
-# ✅ FAST (recommended)
-python3 scrape_500_fast.py
-
-# ❌ SLOW (deprecated)
-scrapy crawl mercadona_sitemap
-```
-
 ### Module Not Found
 ```bash
 # Make sure virtual environment is activated
 source venv/bin/activate
 # Reinstall dependencies
 pip install -r requirements.txt
+```
+
+### Check Current Progress
+```bash
+# Check how many products in database
+sqlite3 data/products.db "SELECT COUNT(*) FROM products"
+
+# View recent products
+sqlite3 data/products.db "SELECT name, price FROM products ORDER BY id DESC LIMIT 5"
 ```
 
 ## API Discovery Story
@@ -299,14 +326,22 @@ This is **10-20x faster** than Selenium because:
 - Direct JSON responses
 - Simple HTTP requests
 
-## Future Enhancements
+## Best Practices
 
-- [ ] Parallel API requests for even faster scraping
-- [ ] Price history tracking over time
-- [ ] Image downloading and local storage
-- [ ] Support for other Spanish retailers
-- [ ] Automatic database updates
-- [ ] Product change notifications
+**Rate Limiting:**
+- Use appropriate delays between requests (currently 0.5 seconds)
+- Monitor for 403 errors and adjust delays if needed
+- Don't overwhelm the server with parallel requests
+
+**Data Management:**
+- Regular backups of `products.db`
+- Check database integrity with `check_db.py`
+- Keep the database in `.gitignore`
+
+**Usage:**
+- Test with `test_api.py` before full scrapes
+- Monitor scraper output for errors
+- Use realistic browser headers to avoid blocking
 
 ## Legal & Ethical Considerations
 
@@ -318,16 +353,17 @@ This scraper is designed for:
 **Important:**
 - Respect Mercadona's Terms of Service
 - Don't use scraped data for commercial purposes without permission
-- Implement appropriate rate limiting
+- Implement appropriate rate limiting (already included)
 - Don't overwhelm the server with requests
 
-## Contributing
+## Future Enhancements
 
-Contributions are welcome! Areas for improvement:
-- Additional data extraction (reviews, related products)
-- Better error handling
-- Performance optimizations
-- Support for more Spanish retailers
+- [ ] Scrape IDs 1-4,900 (currently starting at 4,900)
+- [ ] Price history tracking over time
+- [ ] Image downloading and local storage
+- [ ] Automatic periodic database updates
+- [ ] Product change notifications
+- [ ] Support for other Spanish retailers
 
 ## License
 

@@ -16,10 +16,11 @@ Base.metadata.create_all(engine)
 Session = sessionmaker(bind=engine)
 session = Session()
 
-# Start from product ID 10000 and try 5500 IDs to get 500 products
+# Scan complete product range to get full catalog
 # (some IDs won't exist, that's normal - about 9% hit rate)
-START_ID = 10000
-END_ID = 15500  # Try 5500 IDs to get ~500 valid products
+# Starting from 4900 to skip empty low range and avoid rate limiting
+START_ID = 4900
+END_ID = 75000  # Full range to capture entire Mercadona catalog (~5000-6000 products)
 
 logger.info(f"🚀 Starting ULTRA-FAST API scraper")
 logger.info(f"Trying product IDs from {START_ID} to {END_ID}")
@@ -33,9 +34,20 @@ start_time = time.time()
 for product_id in range(START_ID, END_ID):
     api_url = f"https://tienda.mercadona.es/api/v1_1/products/{product_id}"
 
+    # Add delay to avoid rate limiting (0.5 seconds between requests)
+    time.sleep(0.5)
+
     try:
         response = requests.get(api_url, headers={
-            'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36'
+            'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+            'Accept': 'application/json, text/plain, */*',
+            'Accept-Language': 'es-ES,es;q=0.9,en;q=0.8',
+            'Accept-Encoding': 'gzip, deflate, br',
+            'Referer': 'https://tienda.mercadona.es/',
+            'Origin': 'https://tienda.mercadona.es',
+            'Sec-Fetch-Dest': 'empty',
+            'Sec-Fetch-Mode': 'cors',
+            'Sec-Fetch-Site': 'same-origin'
         }, timeout=10)
 
         if response.status_code == 200:
@@ -98,11 +110,6 @@ for product_id in range(START_ID, END_ID):
     except Exception as e:
         error_count += 1
         logger.error(f"Error fetching product {product_id}: {e}")
-
-    # Stop if we've reached 500 products
-    if success_count >= 500:
-        logger.success(f"🎉 TARGET REACHED! {success_count} products scraped!")
-        break
 
 elapsed_time = time.time() - start_time
 
