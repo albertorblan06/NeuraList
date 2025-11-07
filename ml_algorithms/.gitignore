@@ -1,0 +1,43 @@
+# CMake build files
+build/
+cmake-build-*/
+CMakeCache.txt
+CMakeFiles/
+cmake_install.cmake
+Makefile
+
+# CLion
+.idea/
+*.iml
+
+# Compiled files
+*.o
+*.a
+*.so
+*.dylib
+
+# Python
+venv/
+__pycache__/
+*.pyc
+*.pyo
+*.egg-info/
+.pytest_cache/
+.ipynb_checkpoints/
+
+# Training outputs
+training/logs/
+training/checkpoints/
+training/datasets/data/
+
+# Models
+models/*.tflite
+models/*.h5
+models/*.pb
+models/checkpoints/
+
+# Jupyter
+notebooks/.ipynb_checkpoints/
+
+# macOS
+.DS_Store

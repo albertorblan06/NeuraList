@@ -1,6 +1,11 @@
-#include "neuralist_native.h"
-#include <math.h>
-#include <float.h>
+#include "product_matcher.h"
+#include <cmath>
+#include <cfloat>
+#include <vector>
+#include <algorithm>
+
+namespace neuralist {
+namespace algorithms {
 
 /**
  * Calculate similarity between two feature vectors
@@ -36,22 +41,30 @@ double calculate_similarity(const double* features1, const double* features2, in
  * Find best matching product from a database of product features
  * Returns the index of the best match
  */
-int find_best_match(const double* query_features, int query_size,
-                   const double** product_features, int* product_sizes,
-                   int num_products) {
-    if (!query_features || !product_features || !product_sizes || num_products <= 0) {
+int find_best_match(
+    const double* query_features,
+    int query_size,
+    const double** database_features,
+    int num_products,
+    int feature_size
+) {
+    if (!query_features || !database_features || num_products <= 0) {
         return -1;
+    }
+
+    if (query_size != feature_size) {
+        return -1;  // Feature size mismatch
     }
 
     int best_match = -1;
     double best_similarity = -1.0;
 
     for (int i = 0; i < num_products; i++) {
-        if (product_sizes[i] != query_size) {
-            continue; // Skip if feature sizes don't match
-        }
-
-        double similarity = calculate_similarity(query_features, product_features[i], query_size);
+        double similarity = calculate_similarity(
+            query_features,
+            database_features[i],
+            query_size
+        );
 
         if (similarity > best_similarity) {
             best_similarity = similarity;
@@ -63,10 +76,60 @@ int find_best_match(const double* query_features, int query_size,
 }
 
 /**
- * Advanced product matching with multiple features
- * This can include:
- * - Visual features (color, texture, shape)
- * - Textual features (brand, name, category)
- * - Contextual features (location in fridge, purchase history)
+ * Find top-K matching products
  */
-// TODO: Implement multi-modal product matching
+std::vector<int> find_top_k_matches(
+    const double* query_features,
+    int query_size,
+    const double** database_features,
+    int num_products,
+    int feature_size,
+    int k,
+    double* scores
+) {
+    std::vector<int> result;
+
+    if (!query_features || !database_features || num_products <= 0 || k <= 0) {
+        return result;
+    }
+
+    if (query_size != feature_size) {
+        return result;  // Feature size mismatch
+    }
+
+    // Calculate all similarities
+    std::vector<std::pair<double, int>> similarities;
+    similarities.reserve(num_products);
+
+    for (int i = 0; i < num_products; i++) {
+        double similarity = calculate_similarity(
+            query_features,
+            database_features[i],
+            query_size
+        );
+        similarities.push_back({similarity, i});
+    }
+
+    // Sort by similarity (descending)
+    std::sort(
+        similarities.begin(),
+        similarities.end(),
+        [](const std::pair<double, int>& a, const std::pair<double, int>& b) {
+            return a.first > b.first;
+        }
+    );
+
+    // Get top-k
+    int count = std::min(k, static_cast<int>(similarities.size()));
+    for (int i = 0; i < count; i++) {
+        result.push_back(similarities[i].second);
+        if (scores) {
+            scores[i] = similarities[i].first;
+        }
+    }
+
+    return result;
+}
+
+}  // namespace algorithms
+}  // namespace neuralist

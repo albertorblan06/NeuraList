@@ -1,7 +1,11 @@
-#include "neuralist_native.h"
-#include <math.h>
-#include <stdlib.h>
-#include <string.h>
+#include "image_processing.h"
+#include <cmath>
+#include <cstdlib>
+#include <cstring>
+#include <vector>
+
+namespace neuralist {
+namespace algorithms {
 
 /**
  * Process image data and perform basic preprocessing
@@ -26,7 +30,7 @@ int process_image(const unsigned char* image_data, int width, int height, int ch
  * Extract features from image data
  * This will be used for product recognition and matching
  */
-void* extract_features(const unsigned char* image_data, int width, int height, int* feature_count) {
+double* extract_features(const unsigned char* image_data, int width, int height, int* feature_count) {
     if (!image_data || !feature_count) {
         return nullptr;
     }
@@ -75,3 +79,37 @@ void* extract_features(const unsigned char* image_data, int width, int height, i
     *feature_count = total_features;
     return features;
 }
+
+/**
+ * Extract color histogram features
+ */
+std::vector<double> extract_color_histogram(
+    const unsigned char* image_data,
+    int width,
+    int height,
+    int channels
+) {
+    const int histogram_bins = 256;
+    int total_features = histogram_bins * channels;
+    std::vector<double> features(total_features, 0.0);
+
+    int total_pixels = width * height;
+
+    // Calculate histogram for each channel
+    for (int i = 0; i < total_pixels * channels; i += channels) {
+        for (int c = 0; c < channels; c++) {
+            int value = image_data[i + c];
+            features[c * histogram_bins + value]++;
+        }
+    }
+
+    // Normalize histogram
+    for (int i = 0; i < total_features; i++) {
+        features[i] /= total_pixels;
+    }
+
+    return features;
+}
+
+}  // namespace algorithms
+}  // namespace neuralist
